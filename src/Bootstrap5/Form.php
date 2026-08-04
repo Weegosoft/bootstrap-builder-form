@@ -3,14 +3,14 @@
 namespace Weegosoft\Form;
 
 /**
- * Bootstrap 4 Design Class Form
+ * Bootstrap 5 Design Class Form
  *
- * This class helps generate Bootstrap 4-styled HTML form elements.
+ * This class helps generate Bootstrap 5-styled HTML form elements.
  */
 class Form
 {
     /**
-     * @var array|object The data to populate the form fields. Can be an array or an object.
+     * @var array|object The data to populate the form fields.
      */
     private array|object $data = [];
 
@@ -22,7 +22,7 @@ class Form
     /**
      * Form constructor.
      *
-     * @param array|object $data The data to pre-fill the form fields. Can be an array or an object.
+     * @param array|object $data The data to pre-fill the form fields.
      * @param array|null $errors Validation errors.
      */
     public function __construct(array|object $data, ?array $errors = null)
@@ -33,7 +33,6 @@ class Form
 
     /**
      * Sanitize a field name to create a valid HTML ID.
-     * Handles arrays like 'tags[]' or 'options[1]' correctly.
      */
     private function sanitizeId(string $name): string
     {
@@ -58,14 +57,13 @@ class Form
 
     /**
      * Retrieves the raw value for a given form field name from the data source.
-     * Handles arrays, ArrayAccess (like Laravel Collections), public properties, and getters.
      */
     private function getValue(string $name)
     {
         if (is_array($this->data)) {
             return $this->data[$name] ?? null;
         }
-
+        
         if ($this->data instanceof \ArrayAccess && $this->data->offsetExists($name)) {
             return $this->data->offsetGet($name);
         }
@@ -74,13 +72,13 @@ class Form
             if (property_exists($this->data, $name)) {
                 return $this->data->{$name};
             }
-
+            
             $methodName = 'get' . str_replace(' ', '', ucwords(str_replace('_', ' ', $name)));
             if (method_exists($this->data, $methodName)) {
                 return $this->data->$methodName();
             }
         }
-
+        
         return null;
     }
 
@@ -120,7 +118,7 @@ class Form
     {
         $attributes = '';
         $enctype = $isMultipart ? ' enctype="multipart/form-data"' : '';
-
+        
         if ($options !== null) {
             foreach ($options as $k => $v) {
                 $safeK = htmlspecialchars((string)$k, ENT_QUOTES, 'UTF-8');
@@ -128,15 +126,15 @@ class Form
                 $attributes .= " {$safeK}=\"{$safeV}\"";
             }
         }
-
+        
         $safeAction = htmlspecialchars($action, ENT_QUOTES, 'UTF-8');
         $safeMethod = htmlspecialchars($method, ENT_QUOTES, 'UTF-8');
         $formTag = "<form action=\"{$safeAction}\" method=\"{$safeMethod}\"{$enctype}{$attributes}>";
-
+        
         if (strtoupper($method) === 'POST' && $csrfToken !== null) {
             $formTag .= $this->csrf($csrfToken);
         }
-
+        
         return $formTag;
     }
 
@@ -149,42 +147,39 @@ class Form
     }
 
     /**
-     * Core method to generate various HTML input types (Bootstrap 4 compliant).
+     * Core method to generate various HTML input types (Bootstrap 5 compliant).
      */
     private function input(string $type, string $name, ?string $label = null, ?array $options = null): string
     {
         $safeName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
         $safeType = htmlspecialchars($type, ENT_QUOTES, 'UTF-8');
         $safeId = 'input' . $this->sanitizeId($name);
-
+        
         $labelHtml = '';
         if ($label !== null) {
             $safeLabel = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
-            $labelHtml = "<label for=\"{$safeId}\" class=\"control-label\">{$safeLabel}</label>";
+            $labelHtml = "<label for=\"{$safeId}\" class=\"form-label\">{$safeLabel}</label>";
         }
-
+        
         $errorFeedback = $this->getErrorFeedback($name);
         $inputClasses = $this->getInputClass($name);
-
+        
         $attributes = '';
         $customClasses = '';
         $inputGroupPrepend = '';
         $inputGroupAppend = '';
         $helpHtml = '';
-
+        
         if ($options !== null) {
             foreach ($options as $key => $value) {
                 if ($key === 'class') {
                     $customClasses = (string)$value;
                 } elseif ($key === 'input_group' && is_array($value)) {
-                    if (isset($value['prepend'])) {
-                        $inputGroupPrepend = '<div class="input-group-prepend">' . $value['prepend'] . '</div>';
-                    }
-                    if (isset($value['append'])) {
-                        $inputGroupAppend = '<div class="input-group-append">' . $value['append'] . '</div>';
-                    }
+                    // BS5: No more input-group-prepend/append wrappers, just direct HTML
+                    $inputGroupPrepend = $value['prepend'] ?? '';
+                    $inputGroupAppend = $value['append'] ?? '';
                 } elseif ($key === 'help') {
-                    $helpHtml = '<small class="form-text text-muted">' . htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8') . '</small>';
+                    $helpHtml = '<div class="form-text">' . htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8') . '</div>';
                 } elseif ($key !== 'type' && $key !== 'value') {
                     $safeKey = htmlspecialchars((string)$key, ENT_QUOTES, 'UTF-8');
                     $safeVal = htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
@@ -192,22 +187,22 @@ class Form
                 }
             }
         }
-
+        
         if (!empty($customClasses)) {
             $inputClasses .= ' ' . htmlspecialchars($customClasses, ENT_QUOTES, 'UTF-8');
         }
-
+        
         // Fix: Default value from options should override model data
         $rawValue = array_key_exists('value', $options ?? []) ? $options['value'] : $this->getValue($name);
         $value = is_scalar($rawValue) ? htmlspecialchars((string)$rawValue, ENT_QUOTES, 'UTF-8') : '';
-
+        
         $inputHtml = '';
-
+        
         switch ($type) {
             case 'textarea':
                 $inputHtml = "<textarea name=\"{$safeName}\" id=\"{$safeId}\" class=\"{$inputClasses}\"{$attributes}>{$value}</textarea>";
                 break;
-
+                
             case 'hidden':
                 $hiddenValue = array_key_exists('value', $options ?? []) ? $options['value'] : $rawValue;
                 if ($hiddenValue instanceof \DateTimeInterface) {
@@ -217,22 +212,16 @@ class Form
                 }
                 $safeHiddenVal = htmlspecialchars($formattedValue, ENT_QUOTES, 'UTF-8');
                 return "<input type=\"{$safeType}\" name=\"{$safeName}\" id=\"{$safeId}\" value=\"{$safeHiddenVal}\"{$attributes} />";
-
+                
             case 'file':
-                $fileInputClasses = 'custom-file-input';
-                if (!empty($errorFeedback)) {
-                    $fileInputClasses .= ' is-invalid';
-                }
-                $fileLabel = $label !== null ? htmlspecialchars($label, ENT_QUOTES, 'UTF-8') : 'Choose file';
-                return "<div class=\"form-group\">
+                $fileInputClasses = 'form-control'; // BS5 uses form-control for files
+                if (!empty($errorFeedback)) $fileInputClasses .= ' is-invalid';
+                return "<div class=\"mb-3\">
                     {$labelHtml}
-                    <div class=\"custom-file\">
-                        <input type=\"{$safeType}\" name=\"{$safeName}\" id=\"{$safeId}\" class=\"{$fileInputClasses}\"{$attributes} />
-                        <label class=\"custom-file-label\" for=\"{$safeId}\">{$fileLabel}</label>
-                    </div>
+                    <input type=\"{$safeType}\" name=\"{$safeName}\" id=\"{$safeId}\" class=\"{$fileInputClasses}\"{$attributes} />
                     {$errorFeedback}
                 </div>";
-
+                
             case 'checkbox':
                 $defaultValue = $options['value'] ?? '1';
                 $safeDefaultValue = htmlspecialchars((string)$defaultValue, ENT_QUOTES, 'UTF-8');
@@ -241,40 +230,34 @@ class Form
                 $checkboxClasses = 'form-check-input';
                 if (!empty($errorFeedback)) $checkboxClasses .= ' is-invalid';
                 $cbLabel = htmlspecialchars((string)$label, ENT_QUOTES, 'UTF-8');
-
-                return "<div class=\"form-group\">
-                    <div class=\"checkbox-container form-check\">
-                        <input class=\"{$checkboxClasses}\" type=\"{$safeType}\" name=\"{$safeName}\" id=\"{$id}\" value=\"{$safeDefaultValue}\" {$checked}{$attributes} />
-                        <label for=\"{$id}\" class=\"form-check-label\">
-                            <span style=\"margin-left: 30px\">{$cbLabel}</span>
-                        </label>
-                        {$errorFeedback}
-                    </div>
+                
+                return "<div class=\"form-check mb-2\">
+                    <input class=\"{$checkboxClasses}\" type=\"{$safeType}\" name=\"{$safeName}\" id=\"{$id}\" value=\"{$safeDefaultValue}\" {$checked}{$attributes} />
+                    <label for=\"{$id}\" class=\"form-check-label\">{$cbLabel}</label>
+                    {$errorFeedback}
                 </div>";
-
+                
             case 'radio':
                 $defaultValue = $options['value'] ?? '';
                 $safeDefaultValue = htmlspecialchars((string)$defaultValue, ENT_QUOTES, 'UTF-8');
                 $id = "radio" . $this->sanitizeId($name) . '-' . $this->sanitizeId((string)$defaultValue);
                 $checked = ((string)$rawValue === (string)$defaultValue) ? 'checked' : '';
-                $radioClasses = 'form-check-input'; // Changed from 'radio radio-filled' to standard BS4
+                $radioClasses = 'form-check-input';
                 if (!empty($errorFeedback)) $radioClasses .= ' is-invalid';
                 $radioLabel = htmlspecialchars((string)$label, ENT_QUOTES, 'UTF-8');
-
-                return "<div class=\"form-group\">
-                    <div class=\"radio-container form-check\">
-                        <input type=\"{$safeType}\" name=\"{$safeName}\" id=\"{$id}\" value=\"{$safeDefaultValue}\" {$checked} class=\"{$radioClasses}\"{$attributes} />
-                        <label class=\"form-check-label\" for=\"{$id}\"> {$radioLabel} </label>
-                        {$errorFeedback}
-                    </div>
+                
+                return "<div class=\"form-check mb-2\">
+                    <input type=\"{$safeType}\" name=\"{$safeName}\" id=\"{$id}\" value=\"{$safeDefaultValue}\" {$checked} class=\"{$radioClasses}\"{$attributes} />
+                    <label for=\"{$id}\" class=\"form-check-label\">{$radioLabel}</label>
+                    {$errorFeedback}
                 </div>";
-
+                
             case 'date':
             case 'time':
             case 'datetime-local':
             case 'week':
             case 'month':
-                $format = match ($type) {
+                $format = match($type) {
                     'date' => 'Y-m-d',
                     'time' => 'H:i',
                     'datetime-local' => 'Y-m-d\TH:i',
@@ -286,20 +269,20 @@ class Form
                 $safeFormattedValue = htmlspecialchars($formattedValue, ENT_QUOTES, 'UTF-8');
                 $inputHtml = "<input type=\"{$safeType}\" name=\"{$safeName}\" id=\"{$safeId}\" value=\"{$safeFormattedValue}\" class=\"{$inputClasses}\"{$attributes} />";
                 break;
-
+                
             default:
                 $inputHtml = "<input type=\"{$safeType}\" name=\"{$safeName}\" id=\"{$safeId}\" value=\"{$value}\" class=\"{$inputClasses}\"{$attributes} />";
                 break;
         }
-
+        
         $wrapperHtml = '';
         if (!empty($inputGroupPrepend) || !empty($inputGroupAppend)) {
             $wrapperHtml = "<div class=\"input-group\">{$inputGroupPrepend}{$inputHtml}{$inputGroupAppend}</div>";
         } else {
             $wrapperHtml = $inputHtml;
         }
-
-        return "<div class=\"form-group\">
+        
+        return "<div class=\"mb-3\">
             {$labelHtml}
             {$wrapperHtml}
             {$helpHtml}
@@ -307,98 +290,43 @@ class Form
         </div>";
     }
 
-    public function text(string $name, ?string $label = null, ?array $options = null): string
-    {
-        return $this->input("text", $name, $label, $options);
-    }
-    public function password(string $name, ?string $label = null, ?array $options = null): string
-    {
-        return $this->input("password", $name, $label, $options);
-    }
-    public function email(string $name, ?string $label = null, ?array $options = null): string
-    {
-        return $this->input("email", $name, $label, $options);
-    }
-    public function date(string $name, ?string $label = null, ?array $options = null): string
-    {
-        return $this->input("date", $name, $label, $options);
-    }
-    public function datetimeLocal(string $name, ?string $label = null, ?array $options = null): string
-    {
-        return $this->input("datetime-local", $name, $label, $options);
-    }
-    public function time(string $name, ?string $label = null, ?array $options = null): string
-    {
-        return $this->input("time", $name, $label, $options);
-    }
-    public function tel(string $name, ?string $label = null, ?array $options = null): string
-    {
-        return $this->input("tel", $name, $label, $options);
-    }
-    public function url(string $name, ?string $label = null, ?array $options = null): string
-    {
-        return $this->input("url", $name, $label, $options);
-    }
-    public function number(string $name, ?string $label = null, ?array $options = null): string
-    {
-        return $this->input("number", $name, $label, $options);
-    }
-    public function file(string $name, ?string $label = null, ?array $options = null): string
-    {
-        return $this->input("file", $name, $label, $options);
-    }
-    public function search(string $name, ?string $label = null, ?array $options = null): string
-    {
-        return $this->input("search", $name, $label, $options);
-    }
-    public function color(string $name, ?string $label = null, ?array $options = null): string
-    {
-        return $this->input("color", $name, $label, $options);
-    }
-    public function week(string $name, ?string $label = null, ?array $options = null): string
-    {
-        return $this->input("week", $name, $label, $options);
-    }
-    public function month(string $name, ?string $label = null, ?array $options = null): string
-    {
-        return $this->input("month", $name, $label, $options);
-    }
-    public function textarea(string $name, ?string $label = null, ?array $options = null): string
-    {
-        return $this->input("textarea", $name, $label, $options);
-    }
-    public function paragraph(string $name, string $label, ?array $options = null): string
-    {
-        return $this->textarea($name, $label, $options);
-    }
-    public function address(string $name, string $label, ?array $options = null): string
-    {
-        return $this->textarea($name, $label, $options);
-    }
+    public function text(string $name, ?string $label = null, ?array $options = null): string { return $this->input("text", $name, $label, $options); }
+    public function password(string $name, ?string $label = null, ?array $options = null): string { return $this->input("password", $name, $label, $options); }
+    public function email(string $name, ?string $label = null, ?array $options = null): string { return $this->input("email", $name, $label, $options); }
+    public function date(string $name, ?string $label = null, ?array $options = null): string { return $this->input("date", $name, $label, $options); }
+    public function datetimeLocal(string $name, ?string $label = null, ?array $options = null): string { return $this->input("datetime-local", $name, $label, $options); }
+    public function time(string $name, ?string $label = null, ?array $options = null): string { return $this->input("time", $name, $label, $options); }
+    public function tel(string $name, ?string $label = null, ?array $options = null): string { return $this->input("tel", $name, $label, $options); }
+    public function url(string $name, ?string $label = null, ?array $options = null): string { return $this->input("url", $name, $label, $options); }
+    public function number(string $name, ?string $label = null, ?array $options = null): string { return $this->input("number", $name, $label, $options); }
+    public function file(string $name, ?string $label = null, ?array $options = null): string { return $this->input("file", $name, $label, $options); }
+    public function search(string $name, ?string $label = null, ?array $options = null): string { return $this->input("search", $name, $label, $options); }
+    public function color(string $name, ?string $label = null, ?array $options = null): string { return $this->input("color", $name, $label, $options); }
+    public function week(string $name, ?string $label = null, ?array $options = null): string { return $this->input("week", $name, $label, $options); }
+    public function month(string $name, ?string $label = null, ?array $options = null): string { return $this->input("month", $name, $label, $options); }
+    public function textarea(string $name, ?string $label = null, ?array $options = null): string { return $this->input("textarea", $name, $label, $options); }
+    public function paragraph(string $name, string $label, ?array $options = null): string { return $this->textarea($name, $label, $options); }
+    public function address(string $name, string $label, ?array $options = null): string { return $this->textarea($name, $label, $options); }
 
-    public function image(string $name, ?string $label = null, ?array $options = null): string
-    {
+    public function image(string $name, ?string $label = null, ?array $options = null): string {
         $options = $options ?? [];
         $options['accept'] = 'image/jpeg,image/png,image/gif,image/svg+xml';
         return $this->input("file", $name, $label, $options);
     }
 
-    public function images(string $name, ?string $label = null, ?array $options = null): string
-    {
+    public function images(string $name, ?string $label = null, ?array $options = null): string {
         $options = $options ?? [];
         $options['multiple'] = 'multiple';
         return $this->image($name . '[]', $label, $options);
     }
 
-    public function range(string $name, ?string $label = null, ?array $options = null): string
-    {
+    public function range(string $name, ?string $label = null, ?array $options = null): string {
         $options = $options ?? [];
-        $options['class'] = ($options['class'] ?? '') . ' custom-range'; // BS4 class
+        $options['class'] = ($options['class'] ?? '') . ' form-range'; // BS5 class
         return $this->input("range", $name, $label, $options);
     }
 
-    public function hidden(string $name, $value = null, array $options = []): string
-    {
+    public function hidden(string $name, $value = null, array $options = []): string {
         if (isset($value) && !is_array($value)) {
             $options['value'] = $value;
         } elseif (is_array($value)) {
@@ -407,27 +335,18 @@ class Form
         return $this->input("hidden", $name, "", $options);
     }
 
-    public function submit(string $label, ?array $options = null): string
-    {
-        return $this->button('submit', $label, $options);
-    }
-    public function reset(string $label, ?array $options = null): string
-    {
-        return $this->button('reset', $label, $options);
-    }
+    public function submit(string $label, ?array $options = null): string { return $this->button('submit', $label, $options); }
+    public function reset(string $label, ?array $options = null): string { return $this->button('reset', $label, $options); }
 
-    public function checkbox(string $name, string $label, $value = null): string
-    {
+    public function checkbox(string $name, string $label, $value = null): string {
         return $this->input("checkbox", $name, $label, ['value' => $value]);
     }
 
-    public function radio(string $name, string $label, ?array $options = null): string
-    {
+    public function radio(string $name, string $label, ?array $options = null): string {
         return $this->input("radio", $name, $label, $options);
     }
 
-    public function currency(string $name, ?string $label = null, string $currency = 'FCFA', ?array $options = null): string
-    {
+    public function currency(string $name, ?string $label = null, string $currency = 'FCFA', ?array $options = null): string {
         $options = $options ?? [];
         $safeCurrency = htmlspecialchars($currency, ENT_QUOTES, 'UTF-8');
         $options['input_group'] = [
@@ -438,15 +357,13 @@ class Form
     }
 
     /**
-     * BS4 Switch / Toggle
+     * BS5 Switch / Toggle
      */
-    public function switch(string $name, string $label, $value = 1): string
-    {
+    public function switch(string $name, string $label, $value = 1): string {
         return $this->toggle($name, $label, $value);
     }
 
-    public function toggle(string $name, string $label, $value = 1): string
-    {
+    public function toggle(string $name, string $label, $value = 1): string {
         $currentValue = $this->getValue($name);
         $checked = ((string)$currentValue === (string)$value) ? 'checked' : '';
         $safeName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
@@ -454,52 +371,45 @@ class Form
         $safeValue = htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
         $id = "switch-" . $this->sanitizeId($name);
         $errorFeedback = $this->getErrorFeedback($name);
-
+        
         return "
-        <div class=\"form-group\">
-            <div class=\"custom-control custom-switch\">
-                <input type=\"checkbox\" name=\"{$safeName}\" class=\"custom-control-input\" id=\"{$id}\" value=\"{$safeValue}\" {$checked}>
-                <label class=\"custom-control-label\" for=\"{$id}\">{$safeLabel}</label>
-                {$errorFeedback}
-            </div>
+        <div class=\"form-check form-switch mb-3\">
+            <input type=\"checkbox\" name=\"{$safeName}\" class=\"form-check-input\" id=\"{$id}\" value=\"{$safeValue}\" {$checked} role=\"switch\">
+            <label class=\"form-check-label\" for=\"{$id}\">{$safeLabel}</label>
+            {$errorFeedback}
         </div>";
     }
 
     /**
-     * Select field (BS4 compliant)
+     * Select field (BS5 compliant)
      */
-    public function select(string $name, ?string $label, array $options, ?array $attributes = null): string
-    {
+    public function select(string $name, ?string $label, array $options, ?array $attributes = null): string {
         $currentValue = $this->getValue($name);
         $errorFeedback = $this->getErrorFeedback($name);
         $safeName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
         $safeId = 'select-' . $this->sanitizeId($name);
-
-        $inputClasses = 'form-control';
+        
+        $inputClasses = 'form-select'; // BS5 uses form-select instead of form-control for selects
         if (!empty($attributes['class'])) {
             $inputClasses .= ' ' . htmlspecialchars($attributes['class'], ENT_QUOTES, 'UTF-8');
         }
         if (!empty($errorFeedback)) {
             $inputClasses .= ' is-invalid';
         }
-
+        
         $attrHtml = '';
         $inputGroupPrepend = '';
         $inputGroupAppend = '';
         $helpHtml = '';
-
+        
         if ($attributes !== null) {
             foreach ($attributes as $key => $value) {
                 if ($key !== 'class') {
                     if ($key === 'input_group' && is_array($value)) {
-                        if (isset($value['prepend'])) {
-                            $inputGroupPrepend = '<div class="input-group-prepend">' . $value['prepend'] . '</div>';
-                        }
-                        if (isset($value['append'])) {
-                            $inputGroupAppend = '<div class="input-group-append">' . $value['append'] . '</div>';
-                        }
+                        $inputGroupPrepend = $value['prepend'] ?? '';
+                        $inputGroupAppend = $value['append'] ?? '';
                     } elseif ($key === 'help') {
-                        $helpHtml = '<small class="form-text text-muted">' . htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8') . '</small>';
+                        $helpHtml = '<div class="form-text">' . htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8') . '</div>';
                     } else {
                         $safeK = htmlspecialchars((string)$key, ENT_QUOTES, 'UTF-8');
                         $safeV = htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
@@ -508,17 +418,17 @@ class Form
                 }
             }
         }
-
+        
         $isArraySelect = isset($attributes['multiple']);
         if ($isArraySelect && !is_array($currentValue)) {
             $currentValue = [];
         }
-
+        
         $optionHtml = '';
         foreach ($options as $k => $v) {
             $selected = '';
             if ($isArraySelect) {
-                $selected = in_array($k, (array)$currentValue, true) ? ' selected' : ''; // Strict comparison
+                $selected = in_array($k, (array)$currentValue, true) ? ' selected' : '';
             } else {
                 $selected = ((string)$k === (string)$currentValue) ? ' selected' : '';
             }
@@ -526,82 +436,76 @@ class Form
             $safeValue = htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
             $optionHtml .= "<option value=\"{$safeKey}\"{$selected}>{$safeValue}</option>";
         }
-
+        
         $nameAttribute = $isArraySelect ? "{$safeName}[]" : $safeName;
-        $html = '<div class="form-group">';
-
+        $html = '<div class="mb-3">';
+        
         if ($label !== null && $label !== '') {
             $safeLabel = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
-            $html .= "<label for=\"{$safeId}\" class=\"control-label\">{$safeLabel}</label>";
+            $html .= "<label for=\"{$safeId}\" class=\"form-label\">{$safeLabel}</label>";
         }
-
+        
         $selectHtml = "<select id=\"{$safeId}\" name=\"{$nameAttribute}\" class=\"{$inputClasses}\"{$attrHtml}>{$optionHtml}</select>";
-
+        
         if (!empty($inputGroupPrepend) || !empty($inputGroupAppend)) {
             $html .= "<div class=\"input-group\">{$inputGroupPrepend}{$selectHtml}{$inputGroupAppend}</div>";
         } else {
             $html .= $selectHtml;
         }
-
+        
         $html .= $helpHtml;
         $html .= $errorFeedback;
         $html .= '</div>';
-
+        
         return $html;
     }
 
     /**
-     * Button Group (BS4 btn-group-toggle pattern)
+     * Button Group (BS5 btn-check pattern)
      */
-    public function buttonGroup(string $name, ?string $label, array $options): string
-    {
+    public function buttonGroup(string $name, ?string $label, array $options): string {
         $currentValue = $this->getValue($name);
         $safeName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
-        $html = '<div class="form-group">';
-
+        $html = '<div class="mb-3">';
+        
         if ($label) {
             $safeLabel = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
-            $html .= "<label class=\"d-block control-label\">{$safeLabel}</label>";
+            $html .= "<label class=\"form-label d-block\">{$safeLabel}</label>";
         }
-
-        $html .= '<div class="btn-group btn-group-toggle d-flex" data-toggle="buttons">';
+        
+        $html .= '<div class="btn-group" role="group">';
         foreach ($options as $k => $v) {
-            $active = ((string)$currentValue === (string)$k) ? 'active' : '';
             $checked = ((string)$currentValue === (string)$k) ? 'checked' : '';
             $safeK = htmlspecialchars((string)$k, ENT_QUOTES, 'UTF-8');
             $safeV = htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
             $id = "btn-grp-" . $this->sanitizeId($name) . '-' . $this->sanitizeId((string)$k);
-
+            
             $html .= "
-            <label class=\"btn btn-outline-primary flex-fill {$active}\">
-                <input type=\"radio\" name=\"{$safeName}\" id=\"{$id}\" value=\"{$safeK}\" {$checked} autocomplete=\"off\"> {$safeV}
-            </label>";
+            <input type=\"radio\" class=\"btn-check\" name=\"{$safeName}\" id=\"{$id}\" value=\"{$safeK}\" autocomplete=\"off\" {$checked}>
+            <label class=\"btn btn-outline-primary\" for=\"{$id}\">{$safeV}</label>";
         }
         $html .= '</div>';
-
+        
         $html .= $this->getErrorFeedback($name);
         $html .= '</div>';
         return $html;
     }
 
-    public function autocomplete(string $name, ?string $label, string $ajaxUrl, ?array $options = null): string
-    {
-        $options = $options ?? [];
+    public function autocomplete(string $name, ?string $label, string $ajaxUrl, ?array $options = null): string {
         $options['data-ajax-url'] = $ajaxUrl;
         $options['autocomplete'] = 'off';
         $options['class'] = ($options['class'] ?? '') . ' js-autocomplete';
         return $this->text($name, $label, $options);
     }
 
-    public function dropzone(string $name, ?string $label = "Glissez vos fichiers ici ou cliquez pour parcourir"): string
-    {
+    public function dropzone(string $name, ?string $label = "Glissez vos fichiers ici ou cliquez pour parcourir"): string {
         $errorFeedback = $this->getErrorFeedback($name);
         $safeName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
         $safeLabel = htmlspecialchars((string)$label, ENT_QUOTES, 'UTF-8');
         $safeId = 'dropzone-' . $this->sanitizeId($name);
-
+        
         return "
-        <div class=\"form-group\">
+        <div class=\"mb-3\">
             <div class=\"border border-2 border-dashed rounded p-4 text-center bg-light position-relative\" style=\"border-style: dashed; cursor: pointer;\">
                 <i class=\"fas fa-cloud-upload-alt fa-3x text-muted mb-2\"></i>
                 <p class=\"mb-0\">{$safeLabel}</p>
@@ -611,98 +515,92 @@ class Form
         </div>";
     }
 
-    public function creditCard(string $name, ?string $label = null, ?array $options = null): string
-    {
-        $options = $options ?? [];
+    public function creditCard(string $name, ?string $label = null, ?array $options = null): string {
         $options['placeholder'] = $options['placeholder'] ?? '1234 5678 9012 3456';
         $options['maxlength'] = '19';
-        $options['input_group'] = ['prepend' => '<span class="input-group-text"><i class=\"fas fa-credit-card\"></i></span>'];
+        $options['input_group'] = ['prepend' => '<span class="input-group-text"><i class="fas fa-credit-card"></i></span>'];
         return $this->text($name, $label ?? 'Carte Bancaire', $options);
     }
 
-    public function starRating(string $name, ?string $label = null, ?array $options = null): string
-    {
+    public function starRating(string $name, ?string $label = null, ?array $options = null): string {
         $stars = [1 => '⭐', 2 => '⭐⭐', 3 => '⭐⭐⭐', 4 => '⭐⭐⭐⭐', 5 => '⭐⭐⭐⭐⭐'];
         return $this->radioList($name, $label ?? 'Note', $stars);
     }
 
-    public function tags(string $name, ?string $label = null, ?array $options = null): string
-    {
-        $options = $options ?? [];
+    public function tags(string $name, ?string $label = null, ?array $options = null): string {
         $options['placeholder'] = $options['placeholder'] ?? 'Entrez les tags séparés par des virgules';
         return $this->text($name, $label ?? 'Tags', $options);
     }
 
-    public function checkboxList(string $name, ?string $label, array $options): string
-    {
+    public function checkboxList(string $name, ?string $label, array $options): string {
         $currentValue = $this->getValue($name);
         if (!is_array($currentValue)) {
             $currentValue = [];
         }
         $safeName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
-        $html = '<div class="form-group">';
-
+        $html = '<div class="mb-3">';
+        
         if ($label !== null) {
             $safeLabel = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
-            $html .= "<label class=\"control-label\">{$safeLabel}</label><br/>";
+            $html .= "<label class=\"form-label d-block\">{$safeLabel}</label>";
         }
-
-        $optionHtml = [];
+        
         foreach ($options as $k => $v) {
             $safeK = htmlspecialchars((string)$k, ENT_QUOTES, 'UTF-8');
             $safeV = htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
             $id = "check" . $this->sanitizeId($name) . '-' . $this->sanitizeId((string)$k);
-            $checked = in_array($k, $currentValue, true) ? 'checked' : ''; // Strict comparison
-            $optionHtml[] = "<div class=\"checkbox-container form-check position-relative\">
-                <input type=\"checkbox\" name=\"{$safeName}[]\" id=\"{$id}\" value=\"{$safeK}\" class=\"form-check-input filled-in\" {$checked} />
-                <label for=\"{$id}\" class=\"form-check-label\">
-                    <span style=\"margin-left:30px\">{$safeV}</span>
-                </label>
+            $checked = in_array($k, $currentValue, true) ? 'checked' : '';
+            
+            $html .= "<div class=\"form-check\">
+                <input type=\"checkbox\" name=\"{$safeName}[]\" id=\"{$id}\" value=\"{$safeK}\" class=\"form-check-input\" {$checked} />
+                <label for=\"{$id}\" class=\"form-check-label\">{$safeV}</label>
             </div>";
         }
-        $html .= implode('', $optionHtml);
+        
         $html .= $this->getErrorFeedback($name);
         $html .= '</div>';
         return $html;
     }
 
-    public function radioList(string $name, ?string $label, array $options): string
-    {
+    public function radioList(string $name, ?string $label, array $options): string {
         $currentValue = $this->getValue($name);
         $safeName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
-        $html = '<div class="form-group form-inline">';
+        $html = '<div class="mb-3">';
+        
         if ($label !== null) {
             $safeLabel = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
-            $html .= "<label class=\"control-label mr-2\">{$safeLabel}</label>";
+            $html .= "<label class=\"form-label d-block\">{$safeLabel}</label>";
         }
+        
         foreach ($options as $k => $v) {
             $safeK = htmlspecialchars((string)$k, ENT_QUOTES, 'UTF-8');
             $safeV = htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
             $id = "radio" . $this->sanitizeId($name) . '-' . $this->sanitizeId((string)$k);
             $checked = ((string)$currentValue === (string)$k) ? 'checked' : '';
-            $html .= "<div class=\"radio-container d-inline-block ml-2 form-check form-check-inline\">
+            
+            $html .= "<div class=\"form-check\">
                 <input type=\"radio\" name=\"{$safeName}\" id=\"{$id}\" value=\"{$safeK}\" {$checked} class=\"form-check-input\" />
-                <label class=\"form-check-label\" for=\"{$id}\"> {$safeV} </label>
+                <label for=\"{$id}\" class=\"form-check-label\">{$safeV}</label>
             </div>";
         }
+        
         $html .= $this->getErrorFeedback($name);
         $html .= '</div>';
         return $html;
     }
 
-    public function button(string $type, string $label, ?array $options = null): string
-    {
+    public function button(string $type, string $label, ?array $options = null): string {
         $attr = '';
         $iconHtml = '';
         $classes = 'btn btn-primary';
-
+        
         if ($options !== null) {
             if (isset($options['class'])) {
                 $classes .= ' ' . $options['class'];
                 unset($options['class']);
             }
             if (isset($options['icon'])) {
-                $iconHtml = '<i class="' . htmlspecialchars((string)$options['icon'], ENT_QUOTES, 'UTF-8') . ' mr-1"></i> '; // BS4 uses mr-1
+                $iconHtml = '<i class="' . htmlspecialchars((string)$options['icon'], ENT_QUOTES, 'UTF-8') . ' me-1"></i> '; // BS5 uses me-1 instead of mr-1
                 unset($options['icon']);
             }
             foreach ($options as $k => $v) {
@@ -711,7 +609,7 @@ class Form
                 $attr .= " {$safeK}=\"{$safeV}\"";
             }
         }
-
+        
         $safeType = htmlspecialchars($type, ENT_QUOTES, 'UTF-8');
         $safeLabel = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
         return "<button type=\"{$safeType}\" class=\"{$classes}\"{$attr}>{$iconHtml}{$safeLabel}</button>";
