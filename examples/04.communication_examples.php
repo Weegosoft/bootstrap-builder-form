@@ -1,8 +1,8 @@
 <?php
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 // Utilisation de l'espace de nom d'origine de votre classe
-useWeegosoft\Form;
+use Weegosoft\Form;
 
 $form = new Form([]);
 ?>

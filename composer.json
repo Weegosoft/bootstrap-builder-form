@@ -1,6 +1,6 @@
 {
     "name": "weegosoft/bootstrap-form-builder",
-    "description": "Un générateur de formulaires HTML compatible Bootstrap 4/5 avec gestion automatique du binding d'objets/tableaux et de l'échappement XSS.",
+    "description": "Un générateur de formulaires HTML compatible Bootstrap 4/5 et Tailwind CSS avec gestion automatique du binding d'objets/tableaux et de l'échappement XSS.",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -12,10 +12,21 @@
     "require": {
         "php": ">=8.0"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5 || ^10.0 || ^11.0"
+    },
     "autoload": {
         "psr-4": {
             "Weegosoft\\Form\\": "src/"
         }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Weegosoft\\Form\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit"
     },
     "minimum-stability": "stable"
 }

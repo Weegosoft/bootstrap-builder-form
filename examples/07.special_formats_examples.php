@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
-useWeegosoft\Form;
+use Weegosoft\Form;
 
 // Simulation de filtres actifs dans l'URL (ex: $_GET)
 $activeFilters = [

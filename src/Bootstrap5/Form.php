@@ -1,6 +1,6 @@
 <?php
 
-namespace Weegosoft\Form;
+namespace Weegosoft\Form\Bootstrap5;
 
 /**
  * Bootstrap 5 Design Class Form
@@ -25,7 +25,7 @@ class Form
      * @param array|object $data The data to pre-fill the form fields.
      * @param array|null $errors Validation errors.
      */
-    public function __construct(array|object $data, ?array $errors = null)
+    public function __construct(array|object $data = [], ?array $errors = null)
     {
         $this->data = $data;
         $this->errors = $errors ?? [];
@@ -63,22 +63,30 @@ class Form
         if (is_array($this->data)) {
             return $this->data[$name] ?? null;
         }
-        
+
         if ($this->data instanceof \ArrayAccess && $this->data->offsetExists($name)) {
             return $this->data->offsetGet($name);
         }
 
         if (is_object($this->data)) {
-            if (property_exists($this->data, $name)) {
-                return $this->data->{$name};
-            }
-            
             $methodName = 'get' . str_replace(' ', '', ucwords(str_replace('_', ' ', $name)));
             if (method_exists($this->data, $methodName)) {
                 return $this->data->$methodName();
             }
+
+            if (isset($this->data->{$name})) {
+                return $this->data->{$name};
+            }
+
+            if (property_exists($this->data, $name)) {
+                try {
+                    return $this->data->{$name};
+                } catch (\Throwable $e) {
+                    return null;
+                }
+            }
         }
-        
+
         return null;
     }
 
@@ -192,8 +200,7 @@ class Form
             $inputClasses .= ' ' . htmlspecialchars($customClasses, ENT_QUOTES, 'UTF-8');
         }
         
-        // Fix: Default value from options should override model data
-        $rawValue = array_key_exists('value', $options ?? []) ? $options['value'] : $this->getValue($name);
+        $rawValue = (isset($options['value']) && $options['value'] !== null) ? $options['value'] : $this->getValue($name);
         $value = is_scalar($rawValue) ? htmlspecialchars((string)$rawValue, ENT_QUOTES, 'UTF-8') : '';
         
         $inputHtml = '';
@@ -589,14 +596,23 @@ class Form
         return $html;
     }
 
-    public function button(string $type, string $label, ?array $options = null): string {
+    public function button(string $typeOrLabel, string|array|null $labelOrOptions = null, ?array $options = null): string {
+        if (is_array($labelOrOptions) || $labelOrOptions === null) {
+            $options = $labelOrOptions;
+            $label = $typeOrLabel;
+            $type = 'button';
+        } else {
+            $type = $typeOrLabel;
+            $label = (string)$labelOrOptions;
+        }
+
         $attr = '';
         $iconHtml = '';
         $classes = 'btn btn-primary';
         
         if ($options !== null) {
             if (isset($options['class'])) {
-                $classes .= ' ' . $options['class'];
+                $classes = $options['class'];
                 unset($options['class']);
             }
             if (isset($options['icon'])) {

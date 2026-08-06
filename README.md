@@ -1,139 +1,133 @@
-# WEEGOSOFT Bootstrap Form Builder
+# WEEGOSOFT Form Builder
 
-Une librairie PHP fluide et robuste pour générer des formulaires HTML élégants, nativement stylisés avec Bootstrap 4 et 5. Conçue pour les architectures MVC modernes, elle simplifie le binding de données, la gestion des erreurs et l'intégration de composants UI complexes.
+Une librairie PHP fluide, sécurisée et robuste pour générer des formulaires HTML élégants et réactifs, compatibles nativement avec **Bootstrap 4**, **Bootstrap 5** et **Tailwind CSS**. Conçue pour les architectures MVC et micro-frameworks modernes, elle simplifie le binding de données, l'échappement XSS et l'intégration de composants UI avancés.
+
+---
 
 ## 🚀 Fonctionnalités principales
 
-* **Binding automatique des données :** Pré-remplissage intelligent des formulaires à partir de tableaux (ex: `$_POST`) ou d'objets (DTO, Modèles avec getters).
+* **Support Multi-Framework CSS :** Classes dédiées pour **Bootstrap 4**, **Bootstrap 5** et **Tailwind CSS**.
+* **Binding automatique des données :** Pré-remplissage intelligent à partir de tableaux (`$_POST`, tableaux associatifs) ou d'objets (DTOs, modèles ORM avec propriétés ou getters camelCase).
+* **Gestion automatique des erreurs :** Injection dynamique des classes d'erreur (`is-invalid` / styles d'erreur) et affichage propre des messages de validation.
+* **Sécurité XSS & CSRF intégrée :** Échappement HTML automatique de toutes les valeurs/attributs et génération simple de tokens CSRF.
+* **Composants UI avancés :** *Switches*, *Dropzones* (upload glisser-déposer), *Button Groups*, *Input Groups*, *Champs devises* et *Autocomplete*.
 
-* **Gestion intégrée des erreurs :** Détection automatique des erreurs de validation et injection dynamique des classes `is-invalid` et des messages de feedback Bootstrap.
-
-* **Composants UI avancés :** Génération simplifiée de *Switches*, *Dropzones* (glisser-déposer), *Boutons radio stylisés (Toggle Groups)* et champs *Autocomplete*.
-
-* **Sécurité CSRF :** Intégration facile de jetons CSRF pour sécuriser vos soumissions.
-
-* **Flexibilité maximale :** Accepte des attributs HTML personnalisés (`class`, `id`, `data-*`) et gère les préfixes/suffixes de champs (Input Groups).
+---
 
 ## 📦 Installation
 
-Vous pouvez installer ce package via [Composer](https://getcomposer.org/). Exécutez la commande suivante dans votre terminal :
+Installez le package via [Composer](https://getcomposer.org/) :
 
 ```bash
 composer require weegosoft/bootstrap-form-builder
-
 ```
+
+---
 
 ## 🛠️ Configuration requise
 
-* PHP >= 8.0
-* Bootstrap 4.x ou 5.x (pour le rendu visuel)
-* *Optionnel :* FontAwesome (pour les icônes des boutons)
+* **PHP :** >= 8.0
+* **Framework CSS au choix :** Bootstrap 4.x, Bootstrap 5.x ou Tailwind CSS
+* *(Optionnel)* **FontAwesome :** Pour l'affichage d'icônes dans les boutons
 
-## 💡 Utilisation de base
+---
 
-### 1. Initialisation
+## 💡 Espaces de noms (Namespaces)
 
-La classe `Form` prend en paramètre les données de votre modèle ou tableau pour pré-remplir les champs, et récupère automatiquement les erreurs stockées en session via `WSM\Http\Session`.
+La librairie propose un espace de nom dédié pour chaque framework CSS :
 
-```php
-useWeegosoft\Form;
+| Framework CSS | Classe PHP |
+| :--- | :--- |
+| **Bootstrap 4 (Défaut)** | `Weegosoft\Form\Form` ou `Weegosoft\Form\Bootstrap4\Form` |
+| **Bootstrap 5** | `Weegosoft\Form\Bootstrap5\Form` |
+| **Tailwind CSS** | `Weegosoft\Form\Tailwind\Form` |
 
-// Exemple avec un tableau de données (peut aussi être un Objet)
-$data = [
-    'username' => 'johndoe',
-    'email' => 'john@weegosoft.com'
-];
+---
 
-$form = new Form($data);
+## 🎨 Exemples d'utilisation
 
-```
-
-### 2. Création d'un formulaire
-
-Générez vos balises avec une syntaxe fluide et lisible. La librairie s'occupe de générer la structure complète (labels, wrappers de groupes, inputs, et messages d'erreurs).
+### 1. Bootstrap 5
 
 ```php
-<?= $form->open('/profile/update', 'POST') ?>
+use Weegosoft\Form\Bootstrap5\Form;
 
-    <!-- Champ texte classique avec label -->
-    <?= $form->text('username', 'Nom d\'utilisateur') ?>
+// Données d'exemple (tableau ou objet)
+$data = ['email' => 'john@weegosoft.com'];
+$errors = ['email' => 'Adresse email déjà utilisée.'];
 
-    <!-- Champ email avec attributs HTML supplémentaires (ex: placeholder) -->
-    <?= $form->email('email', 'Adresse Email', ['placeholder' => 'Saisissez votre email']) ?>
-    
-    <!-- Liste déroulante -->
-    <?= $form->select('role', 'Rôle utilisateur', [
-        'admin' => 'Administrateur',
-        'editor' => 'Éditeur',
-        'user' => 'Utilisateur standard'
-    ]) ?>
+$form = new Form($data, $errors);
 
-    <!-- Bouton de soumission avec icône (nécessite FontAwesome) -->
-    <?= $form->submit('Mettre à jour', ['class' => 'btn btn-primary', 'icon' => 'fas fa-save']) ?>
+echo $form->open('/register', 'POST', true, [], 'csrf_token_here');
 
-<?= $form->close() ?>
+echo $form->text('username', 'Nom d\'utilisateur', ['placeholder' => 'johndoe']);
+echo $form->email('email', 'Adresse Email');
+echo $form->switch('notifications', 'Activer les notifications', 1);
 
+echo $form->submit('Inscrire', ['class' => 'btn btn-primary', 'icon' => 'fas fa-user-plus']);
+echo $form->close();
 ```
 
-## 🎨 Éléments d'interface avancés
-
-La librairie WEEGOSOFT brille par sa capacité à générer des composants Bootstrap complexes en une seule ligne de code PHP :
-
-### Interrupteur (Switch)
-
-Génère un composant `custom-switch` Bootstrap.
+### 2. Bootstrap 4
 
 ```php
-<?= $form->switch('notifications', 'Activer les alertes par email', 1) ?>
+use Weegosoft\Form\Form; // Ou Weegosoft\Form\Bootstrap4\Form;
 
+$form = new Form(['role' => 'admin']);
+
+echo $form->open('/profile/update', 'POST');
+echo $form->text('username', 'Nom d\'utilisateur');
+echo $form->select('role', 'Rôle', [
+    'admin' => 'Administrateur',
+    'editor' => 'Éditeur',
+    'user' => 'Utilisateur'
+]);
+echo $form->currency('price', 'Prix de vente', 'FCFA');
+echo $form->submit('Mettre à jour');
+echo $form->close();
 ```
 
-### Champ Monétaire avec Input Group
-
-Ajoute automatiquement la devise en suffixe (append) via les *Input Groups*.
+### 3. Tailwind CSS
 
 ```php
-<?= $form->currency('price', 'Prix de vente', 'FCFA') ?>
+use Weegosoft\Form\Tailwind\Form;
 
+$form = new Form();
+
+echo $form->open('/settings', 'POST', false, ['class' => 'space-y-4']);
+echo $form->text('title', 'Titre de l\'application');
+echo $form->submit('Enregistrer');
+echo $form->close();
 ```
 
-### Groupe de Boutons (Button Group)
+---
 
-Remplace les boutons radios classiques par des boutons cliquables stylisés.
+## 🎨 Composants UI avancés
 
-```php
-<?= $form->buttonGroup('status', 'Statut de publication', [
-    'draft' => 'Brouillon',
-    'published' => 'Publié'
-]) ?>
+* **Interrupteur (Switch) :** `$form->switch('is_active', 'Statut actif', 1)`
+* **Zone d'upload (Dropzone) :** `$form->dropzone('documents', 'Glissez vos fichiers ici')`
+* **Champ Monétaire (Input Group) :** `$form->currency('price', 'Prix', 'EUR')`
+* **Groupe de boutons (Button Group) :** `$form->buttonGroup('status', 'Statut', ['draft' => 'Brouillon', 'published' => 'Publié'])`
 
+---
+
+## 🧪 Tests unitaires
+
+Pour exécuter la suite complète de tests PHPUnit :
+
+```bash
+composer test
+# ou
+vendor/bin/phpunit
 ```
 
-### Zone de Glisser-Déposer (Dropzone)
+---
 
-Génère une zone d'upload de fichiers stylisée en pointillés avec une icône.
+## 📂 Dossier d'exemples
 
-```php
-<?= $form->dropzone('attachments', 'Glissez vos fichiers ici ou cliquez pour parcourir') ?>
+Pour consulter des cas réels (Authentification, Profil, E-commerce, CRM, etc.), explorez le dossier `examples/` inclus dans le dépôt.
 
-```
-
-## 📚 Liste des méthodes disponibles
-
-Voici un aperçu des méthodes de génération prises en charge :
-
-* **Inputs standards :** `text()`, `email()`, `password()`, `number()`, `tel()`, `url()`, `color()`, `search()`, `hidden()`
-* **Dates & Heures :** `date()`, `time()`, `datetimeLocal()`, `week()`, `month()`
-* **Fichiers :** `file()`, `image()`, `images()` (uploads multiples), `dropzone()`
-* **Choix & Sélections :** `select()`, `checkbox()`, `radio()`, `checkboxList()`, `radioList()`, `switch()`, `toggle()`, `buttonGroup()`
-* **Textes longs :** `textarea()`, `paragraph()`, `address()`
-* **Spécifiques :** `currency()`, `range()`, `autocomplete()`
-* **Boutons :** `submit()`, `reset()`, `button()`
-
-## 📂 Exemples complets
-
-Pour voir la librairie en action avec des cas d'utilisation réels (E-commerce, CRM, Authentification, etc.), consultez le dossier `examples/` inclus dans ce dépôt. Vous y trouverez des pages complètes prêtes à être testées.
+---
 
 ## 📄 Licence
 
-Ce projet est sous licence MIT. Vous êtes libre de l'utiliser, de le modifier et de le distribuer dans vos projets personnels comme commerciaux.
+Ce projet est sous licence **MIT**.
