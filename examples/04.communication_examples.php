@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../vendor/autoload.php';
 
 // Utilisation de l'espace de nom d'origine de votre classe
-use Weegosoft\Form;
+use Weegosoft\Form\Form;
 
 $form = new Form([]);
 ?>

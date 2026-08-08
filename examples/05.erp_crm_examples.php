@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use Weegosoft\Form;
+use Weegosoft\Form\Form;
 
 // Données pré-remplies simulant la modification d'une facture existante
 $dummyInvoice = [

@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use Weegosoft\Form;
+use Weegosoft\Form\Form;
 
 // Simulation de données pour un article en cours de rédaction
 $dummyArticle = [
